@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.description   = "Pyroscope OTEL integration"
   spec.homepage      = "https://pyroscope.io/"
   spec.license       = "MIT"
-  spec.required_ruby_version = Gem::Requirement.new(">= 2.4.0")
+  spec.required_ruby_version = Gem::Requirement.new(">= 2.6.0")
 
   # spec.metadata["allowed_push_host"] = "TODO: Set to 'http://mygemserver.com'"
 
@@ -31,5 +31,4 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "opentelemetry-api", "~> 1.1.0"
   spec.add_dependency "pyroscope", "~> 0.5.1"
-
 end
