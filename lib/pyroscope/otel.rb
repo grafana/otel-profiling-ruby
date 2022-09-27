@@ -71,7 +71,7 @@ module Pyroscope
       end
 
       def profile_id(span)
-        span.context.span_id.bytes.unpack("H*")
+        span.context.span_id.unpack("H*")
       end
 
       def profile_url(profile_id)
