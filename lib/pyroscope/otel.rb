@@ -23,10 +23,6 @@ module Pyroscope
       attr_accessor :add_span_name
       # boolean flag option to add profiler url to span attributes
       attr_accessor :add_url
-      # boolean flag option to add profiler url to span attributes
-      attr_accessor :add_baseline_urls
-      # extra set of labels for baseline urls
-      attr_accessor :baseline_labels
 
       # @param [String] app_name - pyroscope app name, including ".cpu" suffix.
       # @param [String] pyroscope_endpoint - http address of pyroscope server for span links.
@@ -37,8 +33,6 @@ module Pyroscope
         @root_span_only = true
         @add_span_name = true
         @add_url = true
-        @add_baseline_urls = true
-        @baseline_labels = {}
       end
 
       def on_start(span, _parent_context)
@@ -74,15 +68,10 @@ module Pyroscope
       def annotate_span(profile_id, span)
         span.set_attribute("pyroscope.profile.id", profile_id)
         span.set_attribute("pyroscope.profile.url", profile_url(profile_id)) if @add_url
-
-        return unless @add_baseline_urls
-
-        span.set_attribute("pyroscope.profile.baseline.url", baseline_url(profile_id, "/comparison"))
-        span.set_attribute("pyroscope.profile.diff.url", baseline_url(profile_id, "/diff"))
       end
 
       def profile_id(span)
-        span.context.span_id.bytes.map { |b| format("%02x", b) }.join
+        span.context.span_id.bytes.unpack("H*")
       end
 
       def profile_url(profile_id)
@@ -97,27 +86,8 @@ module Pyroscope
         url.to_s
       end
 
-      def baseline_url(profile_id, path)
-        now = Time.now.to_i
-        query = URI.encode_www_form({ "query": baseline_query, "from": now - 60 * 60, "until": now,
-                                      "leftQuery": baseline_query, "leftFrom": now - 60 * 60, "leftUntil": now,
-                                      "rightQuery": query(profile_id), "rightFrom": now, "rightUntil": now + 60 * 60 })
-        url = @pyroscope_endpoint.clone
-        url.path = path
-        url.query = query
-        url.to_s
-      end
-
       def query(profile_id)
-        format("%<app_name>s{profile_id=\"%<profile_id>s\"}", { app_name: @app_name,
-                                                                profile_id: profile_id })
-      end
-
-      def baseline_query
-        labels = Pyroscope.get_current_tags.filter { |k, _| k != "profile_id" && @baseline_labels[k].nil? }
-        @baseline_labels.each { |k, v| labels[k] = v }
-        labels = labels.map { |k, v| "#{k}=\"#{v}\"" }.join(",")
-        format("%<app_name>s{%<labels>s}", { app_name: @app_name, labels: labels })
+        "#{app_name}{profile_id=\"#{profile_id}\"}"
       end
     end
   end
