@@ -35,8 +35,8 @@ module Pyroscope
         @add_url = true
       end
 
-      def on_start(span, _parent_context)
-        return if @root_span_only && span.parent_span_id != ZERO_SPAN_ID
+      def on_start(span, parent_context)
+        return if @root_span_only && !root_span?(span, parent_context)
 
         profile_id = profile_id(span)
 
@@ -64,6 +64,17 @@ module Pyroscope
       def shutdown(_timeout: nil) end
 
       private
+
+      def root_span?(parent, parent_context)
+        return true if parent.parent_span_id == ZERO_SPAN_ID
+
+        parent = OpenTelemetry::Trace.current_span(parent_context)
+        return false if parent.nil?
+
+        parent.context.remote?
+      rescue StandardError => _e
+        false
+      end
 
       def annotate_span(profile_id, span)
         span.set_attribute("pyroscope.profile.id", profile_id)
