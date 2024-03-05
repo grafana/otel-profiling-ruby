@@ -59,9 +59,9 @@ module Pyroscope
         Pyroscope._remove_tags(Pyroscope.thread_id, labels)
       end
 
-      def force_flush(_timeout: nil) end
+      def force_flush(timeout: nil) end
 
-      def shutdown(_timeout: nil) end
+      def shutdown(timeout: nil) end
 
       private
 
