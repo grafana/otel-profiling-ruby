@@ -29,6 +29,6 @@ Gem::Specification.new do |spec|
   spec.executables   = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "opentelemetry-api", "~> 1.1.0"
+  spec.add_dependency "opentelemetry-api", "~> 1.1"
   spec.add_dependency "pyroscope", "~> 0.5.1"
 end
