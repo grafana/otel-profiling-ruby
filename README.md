@@ -2,7 +2,8 @@
 
 Pyroscope can integrate with distributed tracing systems supporting OpenTelemetry standard which allows you to link traces with the profiling data, and find specific lines of code related to a performance issue.
 
-For full documentation visit https://pyroscope.io/docs/ruby-tracing/
+For full documentation, refer to our [docs](https://grafana.com/docs/pyroscope/latest/configure-client/trace-span-profiles/ruby-span-profiles/).
+
 ## Installation
 
 Add this line to your application's Gemfile:
