@@ -59,12 +59,12 @@ module Pyroscope
         Pyroscope._remove_tags(Pyroscope.thread_id, labels)
       end
 
-      def force_flush(timeout: nil)
-        0
+      def force_flush(*)
+        OpenTelemetry::SDK::Trace::Export::SUCCESS
       end
 
-      def shutdown(timeout: nil)
-        0
+      def shutdown(*)
+        OpenTelemetry::SDK::Trace::Export::SUCCESS
       end
 
       private
