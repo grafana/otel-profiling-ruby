@@ -7,20 +7,25 @@ on:
     tags:
       - v*
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v1
-
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Configure git
         run: |
           git config user.name "Pyroscope Bot"
           git config user.email "dmitry+bot@pyroscope.io"
 
       - name: Release Gem
-        uses: cadwallion/publish-rubygems-action@master
+        uses: cadwallion/publish-rubygems-action@94a6f4cd5350581749c569b5001eecc864e3ad0b
         if: contains(github.ref, 'refs/tags/v')
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
