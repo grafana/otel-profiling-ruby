@@ -30,5 +30,5 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency "opentelemetry-api", "~> 1.1"
-  spec.add_dependency "pyroscope", ">= 0.5.1"
+  spec.add_dependency "pyroscope", ">= 0.5.1", "< 1.0"
 end
