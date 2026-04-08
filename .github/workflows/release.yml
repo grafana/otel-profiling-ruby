@@ -2,32 +2,25 @@ name: Publish Gem
 
 on:
   push:
-    branches:
-      - "*"
     tags:
       - v*
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
 
 jobs:
-  build:
-    runs-on: ubuntu-x64
-
+  push:
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           persist-credentials: false
-      - name: Configure git
-        run: |
-          git config user.name "Pyroscope Bot"
-          git config user.email "dmitry+bot@pyroscope.io"
 
-      - name: Release Gem
-        uses: cadwallion/publish-rubygems-action@94a6f4cd5350581749c569b5001eecc864e3ad0b
-        if: contains(github.ref, 'refs/tags/v')
-        env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-          RUBYGEMS_API_KEY: ${{secrets.RUBYGEMS_API_KEY}}
-          RELEASE_COMMAND: rake build release:source_control_push release:rubygem_push 
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+          ruby-version: ruby
+
+      - uses: rubygems/release-gem@v1
