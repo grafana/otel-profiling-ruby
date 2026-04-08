@@ -20,7 +20,6 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@e65c17d16e57e481586a6a5a0282698790062f92 # v1.300.0
         with:
-          bundler-cache: true
           ruby-version: ruby
 
       - uses: rubygems/release-gem@6317d8d1f7e28c24d28f6eff169ea854948bd9f7 # v1.2.0
