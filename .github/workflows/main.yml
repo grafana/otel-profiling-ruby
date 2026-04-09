@@ -13,7 +13,7 @@ jobs:
       with:
         persist-credentials: false
     - name: Set up Ruby
-      uses: ruby/setup-ruby@dffc446db9ba5a0c4446edb5bca1c5c473a806c5 # v1.235.0
+      uses: ruby/setup-ruby@e65c17d16e57e481586a6a5a0282698790062f92 # v1.300.0
       with:
         ruby-version: 3.0.0
     - name: Run the default task
