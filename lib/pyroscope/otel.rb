@@ -43,7 +43,7 @@ module Pyroscope
         labels = { "profile_id": profile_id }
         labels["span"] = span.name if @add_span_name
 
-        Pyroscope._add_tags(Pyroscope.thread_id, labels)
+        Pyroscope._add_tags(labels)
 
         annotate_span(profile_id, span)
       rescue StandardError => e
@@ -56,7 +56,7 @@ module Pyroscope
 
         labels = { "profile_id": profile_id }
         labels["span"] = span.name if @add_span_name
-        Pyroscope._remove_tags(Pyroscope.thread_id, labels)
+        Pyroscope._remove_tags(labels)
       end
 
       def force_flush(*)
