@@ -37,11 +37,7 @@ module Pyroscope
 
         profile_id = profile_id(span)
 
-        labels = {
-          "profile_id": profile_id,
-          "span": span.name,
-          "trace_id": trace_id(span)
-        }
+        labels = { "profile_id": profile_id, "span": span.name, "trace_id": trace_id(span) }
 
         Pyroscope._add_tags(labels)
 
@@ -54,11 +50,7 @@ module Pyroscope
         profile_id = span.attributes["pyroscope.profile.id"]
         return if profile_id.nil?
 
-        labels = {
-          "profile_id": profile_id,
-          "span": span.name,
-          "trace_id": trace_id(span)
-        }
+        labels = { "profile_id": profile_id, "span": span.name, "trace_id": trace_id(span) }
         Pyroscope._remove_tags(labels)
       end
 
