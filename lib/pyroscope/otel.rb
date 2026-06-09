@@ -19,8 +19,6 @@ module Pyroscope
 
       # boolean flag option to annotate spans with profile attributes only on root spans.
       attr_accessor :root_span_only
-      # boolean flag option to annotate pyroscope profiles with span name
-      attr_accessor :add_span_name
       # boolean flag option to add profiler url to span attributes
       attr_accessor :add_url
 
@@ -31,7 +29,6 @@ module Pyroscope
         @app_name = app_name
         @pyroscope_endpoint = URI.parse(pyroscope_endpoint)
         @root_span_only = true
-        @add_span_name = true
         @add_url = true
       end
 
@@ -40,8 +37,11 @@ module Pyroscope
 
         profile_id = profile_id(span)
 
-        labels = { "profile_id": profile_id }
-        labels["span"] = span.name if @add_span_name
+        labels = {
+          "profile_id": profile_id,
+          "span": span.name,
+          "trace_id": trace_id(span)
+        }
 
         Pyroscope._add_tags(labels)
 
@@ -54,8 +54,11 @@ module Pyroscope
         profile_id = span.attributes["pyroscope.profile.id"]
         return if profile_id.nil?
 
-        labels = { "profile_id": profile_id }
-        labels["span"] = span.name if @add_span_name
+        labels = {
+          "profile_id": profile_id,
+          "span": span.name,
+          "trace_id": trace_id(span)
+        }
         Pyroscope._remove_tags(labels)
       end
 
@@ -87,6 +90,10 @@ module Pyroscope
 
       def profile_id(span)
         span.context.span_id.unpack1("H*")
+      end
+
+      def trace_id(span)
+        span.context.trace_id.unpack1("H*")
       end
 
       def profile_url(profile_id)
