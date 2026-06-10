@@ -17,16 +17,12 @@ module Pyroscope
       # http address of pyroscope server for span links
       attr_accessor :pyroscope_endpoint
 
-      # boolean flag option to add profiler url to span attributes
-      attr_accessor :add_url
-
       # @param [String] app_name - pyroscope app name, including ".cpu" suffix.
       # @param [String] pyroscope_endpoint - http address of pyroscope server for span links.
       def initialize(app_name,
                      pyroscope_endpoint)
         @app_name = app_name
         @pyroscope_endpoint = URI.parse(pyroscope_endpoint)
-        @add_url = true
       end
 
       def on_start(span, parent_context)
@@ -74,7 +70,6 @@ module Pyroscope
 
       def annotate_span(profile_id, span)
         span.set_attribute("pyroscope.profile.id", profile_id)
-        span.set_attribute("pyroscope.profile.url", profile_url(profile_id)) if @add_url
       end
 
       def profile_id(span)
@@ -83,22 +78,6 @@ module Pyroscope
 
       def trace_id(span)
         span.context.trace_id.unpack1("H*")
-      end
-
-      def profile_url(profile_id)
-        url = @pyroscope_endpoint.clone
-        from = Time.now.to_i
-        to = from + 60 * 60
-        url.query = URI.encode_www_form({
-                                          "query": query(profile_id),
-                                          "from": from,
-                                          "until": to
-                                        })
-        url.to_s
-      end
-
-      def query(profile_id)
-        "#{app_name}{profile_id=\"#{profile_id}\"}"
       end
     end
   end
