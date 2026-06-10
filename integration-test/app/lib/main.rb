@@ -4,14 +4,6 @@ require "pyroscope"
 require "pyroscope/otel"
 require "opentelemetry-sdk"
 
-warn "DIAG pyroscope-otel spec: #{Gem.loaded_specs['pyroscope-otel']&.full_gem_path.inspect} version=#{Gem.loaded_specs['pyroscope-otel']&.version}"
-warn "DIAG SpanProcessor#initialize source: #{Pyroscope::Otel::SpanProcessor.instance_method(:initialize).source_location.inspect}"
-warn "DIAG loaded otel features: #{$LOADED_FEATURES.grep(/pyroscope.*otel/).inspect}"
-warn "DIAG load paths (gem/opt): #{$LOAD_PATH.grep(%r{/opt/gem|pyroscope-otel}).inspect}"
-warn "DIAG SpanProcessor instance_methods(false): #{Pyroscope::Otel::SpanProcessor.instance_methods(false).inspect}"
-warn "DIAG otel.rb on disk (first 40 lines):"
-warn File.read("/opt/gem/lib/pyroscope/otel.rb").lines.first(40).map { |l| "  | #{l.rstrip}" }.join("\n")
-
 app_name = ENV.fetch("PYROSCOPE_APPLICATION_NAME", "rideshare.ruby.app")
 server = ENV.fetch("PYROSCOPE_SERVER_ADDRESS", "http://pyroscope:4040")
 
@@ -38,7 +30,7 @@ OpenTelemetry.error_handler = lambda do |exception:, message:|
 end
 
 OpenTelemetry::SDK.configure do |c|
-  c.add_span_processor Pyroscope::Otel::SpanProcessor.new("#{app_name}.cpu", server)
+  c.add_span_processor Pyroscope::Otel::SpanProcessor.new
 end
 
 provider = OpenTelemetry.tracer_provider
