@@ -16,9 +16,7 @@ module Pyroscope
 
         profile_id = profile_id(span)
 
-        labels = { "profile_id": profile_id, "span": span.name, "trace_id": trace_id(span) }
-
-        Pyroscope._add_tags(labels)
+        Pyroscope._add_tags({ "profile_id": profile_id, "span": span.name, "trace_id": trace_id(span) })
 
         annotate_span(profile_id, span)
       rescue StandardError => e
@@ -29,8 +27,7 @@ module Pyroscope
         profile_id = span.attributes["pyroscope.profile.id"]
         return if profile_id.nil?
 
-        labels = { "profile_id": profile_id, "span": span.name, "trace_id": trace_id(span) }
-        Pyroscope._remove_tags(labels)
+        Pyroscope._remove_tags({ "profile_id": profile_id, "span": span.name, "trace_id": trace_id(span) })
       end
 
       def force_flush(*)
