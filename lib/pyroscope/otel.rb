@@ -17,8 +17,6 @@ module Pyroscope
       # http address of pyroscope server for span links
       attr_accessor :pyroscope_endpoint
 
-      # boolean flag option to annotate spans with profile attributes only on root spans.
-      attr_accessor :root_span_only
       # boolean flag option to add profiler url to span attributes
       attr_accessor :add_url
 
@@ -28,12 +26,11 @@ module Pyroscope
                      pyroscope_endpoint)
         @app_name = app_name
         @pyroscope_endpoint = URI.parse(pyroscope_endpoint)
-        @root_span_only = true
         @add_url = true
       end
 
       def on_start(span, parent_context)
-        return if @root_span_only && !root_span?(span, parent_context)
+        return unless root_span?(span, parent_context)
 
         profile_id = profile_id(span)
 
