@@ -2,27 +2,20 @@
 
 require "pyroscope"
 # require_relative "otel/version"
-require "uri"
 
 module Pyroscope
   module Otel
     class Error < StandardError; end
 
-    # SpanProcessor annotates otel spans with profile_id, profile urls,
-    # baseline urls
+    # SpanProcessor annotates otel spans with profile_id
     class SpanProcessor
       ZERO_SPAN_ID = [0, 0, 0, 0, 0, 0, 0, 0].pack("C*")
       # pyroscope app name, including ".cpu" suffix.
       attr_accessor :app_name
-      # http address of pyroscope server for span links
-      attr_accessor :pyroscope_endpoint
 
       # @param [String] app_name - pyroscope app name, including ".cpu" suffix.
-      # @param [String] pyroscope_endpoint - http address of pyroscope server for span links.
-      def initialize(app_name,
-                     pyroscope_endpoint)
+      def initialize(app_name)
         @app_name = app_name
-        @pyroscope_endpoint = URI.parse(pyroscope_endpoint)
       end
 
       def on_start(span, parent_context)
