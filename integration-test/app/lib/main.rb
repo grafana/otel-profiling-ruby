@@ -15,8 +15,28 @@ Pyroscope.configure do |config|
   }
 end
 
+# Print the underlying cause of any configuration error so failures are
+# diagnosable from the container logs instead of the opaque SDK wrapper.
+OpenTelemetry.error_handler = lambda do |exception:, message:|
+  warn "OpenTelemetry error: #{message}"
+  if exception
+    warn "  #{exception.class}: #{exception.message}"
+    cause = exception.cause
+    if cause
+      warn "  caused by #{cause.class}: #{cause.message}"
+      warn cause.backtrace.first(15).map { |l| "    #{l}" }.join("\n") if cause.backtrace
+    end
+  end
+end
+
 OpenTelemetry::SDK.configure do |c|
   c.add_span_processor Pyroscope::Otel::SpanProcessor.new("#{app_name}.cpu", server)
+end
+
+provider = OpenTelemetry.tracer_provider
+unless provider.is_a?(OpenTelemetry::SDK::Trace::TracerProvider)
+  warn "FATAL: OpenTelemetry SDK did not configure; tracer_provider=#{provider.class}. Spans will not be recorded."
+  exit 1
 end
 
 # spin busy-loops for roughly `seconds` so the CPU profiler captures the frame.
