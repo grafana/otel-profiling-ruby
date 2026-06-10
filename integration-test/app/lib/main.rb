@@ -4,6 +4,11 @@ require "pyroscope"
 require "pyroscope/otel"
 require "opentelemetry-sdk"
 
+warn "DIAG pyroscope-otel spec: #{Gem.loaded_specs['pyroscope-otel']&.full_gem_path.inspect} version=#{Gem.loaded_specs['pyroscope-otel']&.version}"
+warn "DIAG SpanProcessor#initialize source: #{Pyroscope::Otel::SpanProcessor.instance_method(:initialize).source_location.inspect}"
+warn "DIAG loaded otel features: #{$LOADED_FEATURES.grep(/pyroscope.*otel/).inspect}"
+warn "DIAG load paths (gem/opt): #{$LOAD_PATH.grep(%r{/opt/gem|pyroscope-otel}).inspect}"
+
 app_name = ENV.fetch("PYROSCOPE_APPLICATION_NAME", "rideshare.ruby.app")
 server = ENV.fetch("PYROSCOPE_SERVER_ADDRESS", "http://pyroscope:4040")
 

@@ -155,7 +155,7 @@ func TestSpanProfiles(t *testing.T) {
 					}
 				}
 				return true
-			}, 3*time.Minute, 5*time.Second)
+			}, 45*time.Second, 5*time.Second)
 
 			if !ok {
 				if lastErr != nil {
