@@ -28,10 +28,7 @@ Pyroscope.configure do |config|
 end
 
 OpenTelemetry::SDK.configure do |config|
-  config.add_span_processor Pyroscope::Otel::SpanProcessor.new(
-    "#{app_name}.cpu", # your app name with ".cpu" suffix, for example rideshare-ruby.cpu
-    pyroscope_endpoint # link to your pyroscope server, for example "http://localhost:4040"
-  )
+  config.add_span_processor Pyroscope::Otel::SpanProcessor.new
   # Configure the rest of opentelemetry as described  https://github.com/open-telemetry/opentelemetry-ruby
 end
 ```
