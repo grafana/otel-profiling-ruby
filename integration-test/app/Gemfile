@@ -1,0 +1,9 @@
+# frozen_string_literal: true
+
+source "https://rubygems.org"
+
+# The gem under test, mounted from the repo root in the Dockerfile.
+gem "pyroscope-otel", path: "/opt/gem"
+
+gem "pyroscope", "~> 1.0"
+gem "opentelemetry-sdk"
