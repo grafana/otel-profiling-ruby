@@ -10,13 +10,6 @@ module Pyroscope
     # SpanProcessor annotates otel spans with profile_id
     class SpanProcessor
       ZERO_SPAN_ID = [0, 0, 0, 0, 0, 0, 0, 0].pack("C*")
-      # pyroscope app name, including ".cpu" suffix.
-      attr_accessor :app_name
-
-      # @param [String] app_name - pyroscope app name, including ".cpu" suffix.
-      def initialize(app_name)
-        @app_name = app_name
-      end
 
       def on_start(span, parent_context)
         return unless root_span?(span, parent_context)
