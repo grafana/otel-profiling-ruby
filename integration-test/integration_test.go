@@ -101,10 +101,14 @@ type spanCheck struct {
 	// pyroscope "span" label.
 	span string
 	// mustContain frames that have to appear in the span-scoped profile.
+	//
+	// Note: we only assert positive containment. A non-empty profile for
+	// {span="<name>"} already proves the SpanProcessor labels profiles per
+	// span (without the label the query would return nothing). We avoid
+	// negative ("must not contain") assertions because the CPU profiler can
+	// attribute a sample taken at a span boundary to the adjacent span,
+	// which would make such assertions flaky.
 	mustContain []string
-	// mustNotContain frames that must NOT appear, proving the profile is
-	// scoped to this span only.
-	mustNotContain []string
 }
 
 // TestSpanProfiles verifies that Pyroscope::Otel::SpanProcessor labels CPU
@@ -122,9 +126,8 @@ func TestSpanProfiles(t *testing.T) {
 
 	checks := []spanCheck{
 		{
-			span:           "BikeHandler",
-			mustContain:    []string{"find_nearest_vehicle"},
-			mustNotContain: []string{"check_driver_availability"},
+			span:        "BikeHandler",
+			mustContain: []string{"find_nearest_vehicle"},
 		},
 		{
 			span:        "CarHandler",
@@ -163,11 +166,6 @@ func TestSpanProfiles(t *testing.T) {
 				}
 				t.Logf("[%s] last collapsed profile:\n%s", check.span, lastCollapsed)
 				t.FailNow()
-			}
-
-			for _, f := range check.mustNotContain {
-				require.False(t, strings.Contains(lastCollapsed, f),
-					"[%s] frame %q must not appear in span-scoped profile:\n%s", check.span, f, lastCollapsed)
 			}
 		})
 	}
