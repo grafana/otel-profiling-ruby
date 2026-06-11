@@ -80,7 +80,7 @@ loop do
   tracer.in_span("ScooterHandler") { order_scooter(0.3) }
   tracer.in_span("CarHandler") do |span|
     order_car(0.4)
-    puts "span=CarHandler spanId=#{span.context.span_id.unpack1('H*')}"
+    puts "span=CarHandler spanId=#{span.context.span_id.unpack1("H*")}"
     $stdout.flush
   end
 end
