@@ -47,6 +47,32 @@ func (c *Client) SelectMergeStacktraces(ctx context.Context, req *SelectMergeSta
 	return res, err
 }
 
+func (c *Client) SelectMergeSpanProfile(ctx context.Context, req *SelectMergeSpanProfileRequest) (*SelectMergeSpanProfileResponse, error) {
+	url := c.URL + "/querier.v1.QuerierService/SelectMergeSpanProfile"
+	bs, err := json.Marshal(req)
+	if err != nil {
+		return nil, fmt.Errorf("faield to marshal request to json: %w", err)
+	}
+	httpRequest, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(bs))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create http request: %w", err)
+	}
+	httpRequest.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.HTTP.Do(httpRequest)
+	if err != nil {
+		return nil, fmt.Errorf("failed to do http request: %w", err)
+	}
+	defer resp.Body.Close()
+	responseBody, err := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("server returned %d %s", resp.StatusCode, responseBody)
+	}
+	res := new(SelectMergeSpanProfileResponse)
+	err = json.Unmarshal(responseBody, res)
+	return res, err
+}
+
 type ProfileFormat int32
 
 const (
@@ -78,6 +104,31 @@ type SelectMergeStacktracesRequest struct {
 }
 
 type SelectMergeStacktracesResponse struct {
+	// Pyroscope tree bytes.
+	Tree []byte `json:"tree,omitempty"`
+}
+
+type SelectMergeSpanProfileRequest struct {
+	// Profile Type ID string in the form
+	// <name>:<type>:<unit>:<period_type>:<period_unit>.
+	ProfileTypeID string `json:"profile_typeID,omitempty"`
+	// Label selector string
+	LabelSelector string `json:"label_selector,omitempty"`
+	// Milliseconds since epoch.
+	Start int64 `json:"start,omitempty"`
+	// Milliseconds since epoch.
+	End int64 `json:"end,omitempty"`
+	// Select profiles whose samples are tagged with one of the provided span IDs.
+	SpanSelector []string `json:"span_selector,omitempty"`
+	// Limit the nodes returned to only show the node with the max_node's biggest
+	// total
+	MaxNodes *int64 `json:"max_nodes,omitempty"`
+	// Profile format specifies the format of profile to be returned.
+	// If not specified, the profile will be returned in flame graph format.
+	Format ProfileFormat `json:"format,omitempty"`
+}
+
+type SelectMergeSpanProfileResponse struct {
 	// Pyroscope tree bytes.
 	Tree []byte `json:"tree,omitempty"`
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -49,10 +50,10 @@ func buildAppImage(t *testing.T, rubyVersion string) string {
 	return tag
 }
 
-func startApp(t *testing.T, net *dockertest.Network, image, svcName string) {
+func startApp(t *testing.T, net *dockertest.Network, image, svcName string) *dockertest.Container {
 	t.Helper()
 	t.Logf("starting app %s (service_name=%s) ...", image, svcName)
-	dockertest.StartContainer(t, dockertest.ContainerRequest{
+	return dockertest.StartContainer(t, dockertest.ContainerRequest{
 		Image:          image,
 		Platform:       "linux/amd64",
 		Network:        net.Name,
@@ -78,6 +79,52 @@ func queryProfile(t *testing.T, pyroscopeURL, labelSelector string) (string, err
 			Start:         from.UnixMilli(),
 			End:           to.UnixMilli(),
 			LabelSelector: labelSelector,
+			MaxNodes:      &maxNodes,
+			Format:        querier.ProfileFormat_PROFILE_FORMAT_TREE,
+		})
+	if err != nil {
+		return "", err
+	}
+	if len(resp.Tree) == 0 {
+		return "", nil
+	}
+	tt, err := model.UnmarshalTree(resp.Tree)
+	if err != nil {
+		return "", err
+	}
+	buf := bytes.NewBuffer(nil)
+	tt.WriteCollapsed(buf)
+	return buf.String(), nil
+}
+
+var spanIDRe = regexp.MustCompile(`spanId=([0-9a-fA-F]{16})`)
+
+// extractSpanID returns the first span ID logged by the app in the form
+// "spanId=<16-hex>".
+func extractSpanID(logs string) (string, error) {
+	matches := spanIDRe.FindStringSubmatch(logs)
+	if len(matches) < 2 {
+		return "", fmt.Errorf("spanId not found in logs")
+	}
+	return matches[1], nil
+}
+
+// queryProfileBySpanID queries a span-scoped CPU profile using SelectMergeSpanProfile,
+// selecting samples tagged with the given span ID, and returns the collapsed tree.
+func queryProfileBySpanID(t *testing.T, pyroscopeURL, labelSelector, spanID string) (string, error) {
+	t.Helper()
+	qc := querier.NewClient(http.DefaultClient, pyroscopeURL)
+
+	to := time.Now()
+	from := to.Add(-time.Hour)
+	maxNodes := int64(65536)
+	resp, err := qc.SelectMergeSpanProfile(context.Background(),
+		&querier.SelectMergeSpanProfileRequest{
+			ProfileTypeID: cpuProfileType,
+			Start:         from.UnixMilli(),
+			End:           to.UnixMilli(),
+			LabelSelector: labelSelector,
+			SpanSelector:  []string{spanID},
 			MaxNodes:      &maxNodes,
 			Format:        querier.ProfileFormat_PROFILE_FORMAT_TREE,
 		})
@@ -168,5 +215,67 @@ func TestSpanProfiles(t *testing.T) {
 				t.FailNow()
 			}
 		})
+	}
+}
+
+// TestSpanProfilesBySpanID verifies that a CPU profile scoped to a single span
+// can be queried by its span ID via Pyroscope's SelectMergeSpanProfile, proving
+// that Pyroscope::Otel::SpanProcessor tags samples with the OpenTelemetry span
+// ID (the "profile_id" label).
+func TestSpanProfilesBySpanID(t *testing.T) {
+	net := dockertest.CreateNetwork(t)
+
+	pyroscopeURL := startPyroscope(t, net)
+	t.Logf("pyroscope URL: %s", pyroscopeURL)
+
+	image := buildAppImage(t, envRubyVersion())
+	svcName := serviceName()
+	appC := startApp(t, net, image, svcName)
+
+	var spanID string
+	ok := require.Eventually(t, func() bool {
+		var err error
+		spanID, err = extractSpanID(appC.Logs(t))
+		if err != nil {
+			t.Logf("span ID not in logs yet: %s", err)
+			return false
+		}
+		return true
+	}, time.Minute, time.Second)
+	if !ok {
+		t.Fatal("failed to extract span ID from app logs")
+	}
+	t.Logf("extracted span ID: %s", spanID)
+
+	labelSelector := fmt.Sprintf(`{service_name="%s"}`, svcName)
+	mustContain := []string{"find_nearest_vehicle", "check_driver_availability"}
+
+	var lastCollapsed string
+	var lastErr error
+	ok = require.Eventually(t, func() bool {
+		lastCollapsed, lastErr = queryProfileBySpanID(t, pyroscopeURL, labelSelector, spanID)
+		if lastErr != nil {
+			t.Logf("query error: %s", lastErr)
+			return false
+		}
+		if lastCollapsed == "" {
+			t.Logf("empty profile")
+			return false
+		}
+		for _, f := range mustContain {
+			if !strings.Contains(lastCollapsed, f) {
+				t.Logf("frame %q not found yet", f)
+				return false
+			}
+		}
+		return true
+	}, 3*time.Minute, 5*time.Second)
+
+	if !ok {
+		if lastErr != nil {
+			t.Logf("last error: %s", lastErr)
+		}
+		t.Logf("last collapsed profile:\n%s", lastCollapsed)
+		t.FailNow()
 	}
 }
