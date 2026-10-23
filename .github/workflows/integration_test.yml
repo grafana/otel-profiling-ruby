@@ -1,0 +1,71 @@
+name: Integration Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    name: discover tests
+    runs-on: ubuntu-latest
+    outputs:
+      tests: ${{ steps.tests.outputs.tests }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - name: Set up Go
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
+        with:
+          go-version: 'stable'
+          cache-dependency-path: integration-test/go.mod
+      - name: Generate test matrix
+        id: tests
+        run: echo "tests=$(make ci-matrix)" >> "$GITHUB_OUTPUT"
+        working-directory: integration-test
+
+  unit-test:
+    name: dockertest unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - name: Set up Go
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
+        with:
+          go-version: 'stable'
+          cache-dependency-path: integration-test/go.mod
+      - name: Run dockertest unit tests
+        run: go test -v -timeout 10m ./dockertest/
+        working-directory: integration-test
+
+  test:
+    name: integration-test ${{ matrix.test }} ruby ${{ matrix.ruby_version }}
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test: ${{ fromJSON(needs.discover.outputs.tests) }}
+        ruby_version: ['3.2.2', '3.3.9', '3.4.1']
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - name: Set up Go
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
+        with:
+          go-version: 'stable'
+          cache-dependency-path: integration-test/go.mod
+      - name: Run integration test
+        run: go test -v -timeout 60m -count=1 -run "^${{ matrix.test }}$" .
+        env:
+          RUBY_VERSION: ${{ matrix.ruby_version }}
+        working-directory: integration-test
